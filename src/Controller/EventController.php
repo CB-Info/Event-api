@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Event;
 use Doctrine\ORM\EntityManager;
 use App\Repository\EventRepository;
+use App\Repository\PlaceRepository;
 use App\Repository\ArtisteRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,6 +15,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
@@ -120,7 +122,8 @@ class EventController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/event', name: 'event.create', methods: ['POST'])]
-    public function createEvent(Request $request, ArtisteRepository $artisteRepository, EntityManagerInterface $entityManager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator): JsonResponse
+    #[IsGranted("ROLE_ADMIN", message: 'Chech, vous n\'avez pas le bon rôle')]
+    public function createEvent(Request $request, ArtisteRepository $artisteRepository, PlaceRepository $placeRepository, EntityManagerInterface $entityManager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator): JsonResponse
     {
         $event = $serializer->deserialize(
             $request->getContent(),
@@ -131,6 +134,8 @@ class EventController extends AbstractController
 
         $content = $request->toArray();
         $artist = $artisteRepository->find($content['idArtiste'] ?? -1);
+        $place = $placeRepository->find($content['idPlace'] ?? -1);
+        $event->setPlace($place);
         $event->setArtist($artist);
 
         $errors = $validator->validate($event);
@@ -159,7 +164,7 @@ class EventController extends AbstractController
      */
     #[Route('/api/event/{idEvent}', name: 'event.update', methods: ['PUT'])]
     #[ParamConverter("event", options : ["id" => "idEvent"])]
-    public function updateEvent(Event $event, Request $request, ArtisteRepository $artisteRepository, EntityManagerInterface $entityManager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator): JsonResponse
+    public function updateEvent(Event $event, Request $request, PlaceRepository $placeRepository, ArtisteRepository $artisteRepository, EntityManagerInterface $entityManager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator): JsonResponse
     {
         $updateEvent = $serializer->deserialize(
             $request->getContent(),
@@ -172,7 +177,9 @@ class EventController extends AbstractController
 
         $content = $request->toArray();
         $artist = $artisteRepository->find($content['idArtist'] ?? -1);
+        $place = $placeRepository->find($content['idPlace'] ?? -1);
         $updateEvent->setArtist($artist);
+        $updateEvent->setPlace($place);
 
         $entityManager->persist($updateEvent);
         $entityManager->flush();

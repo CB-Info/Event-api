@@ -33,7 +33,7 @@ class PlaceController extends AbstractController
     public function getAllPlace(PlaceRepository $repo, SerializerInterface $serializer): JsonResponse
     {
         $events=$repo->findAll();
-        $jsonPlace = $serializer->serialize($events, 'json', ["groups" => "getAllPlace"]);
+        $jsonPlace = $serializer->serialize($events, 'json', ["groups" => "getAllEvent"]);
 
         return new JsonResponse($jsonPlace, Response::HTTP_OK, [], true);
     }

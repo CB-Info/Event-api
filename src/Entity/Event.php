@@ -37,7 +37,7 @@ class Event
 
     #[ORM\ManyToOne(inversedBy: 'events')]
     #[Groups(["getAllEvent", "getEvent"])]
-    private ?Place $Place = null;
+    private ?Place $place = null;
 
     public function getId(): ?int
     {
@@ -94,12 +94,12 @@ class Event
 
     public function getPlace(): ?Place
     {
-        return $this->Place;
+        return $this->place;
     }
 
-    public function setPlace(?Place $Place): self
+    public function setPlace(?Place $place): self
     {
-        $this->Place = $Place;
+        $this->place = $place;
 
         return $this;
     }

@@ -14,15 +14,15 @@ class Place
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getAllEvent", "getEvent"])]
+    #[Groups(["getAllEvent", "getEvent", "getPlace"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getAllEvent", "getEvent"])]
+    #[Groups(["getAllEvent", "getEvent", "getPlace"])]
     private ?string $placeName = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getAllEvent", "getEvent"])]
+    #[Groups(["getAllEvent", "getEvent", "getPlace"])]
     private ?string $placeAddress = null;
 
     #[ORM\Column]
@@ -31,7 +31,7 @@ class Place
     #[ORM\Column(length: 255)]
     private ?string $placeRegion = null;
 
-    #[ORM\OneToMany(mappedBy: 'Place', targetEntity: Event::class)]
+    #[ORM\OneToMany(mappedBy: 'place', targetEntity: Event::class)]
     private Collection $events;
 
     public function __construct()
