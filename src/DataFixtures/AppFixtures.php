@@ -68,13 +68,22 @@ class AppFixtures extends Fixture
 
         for ($i = 1; $i <= 10; $i++) {
 
+            $place = new Place();
+            $place->setPlaceName($this->faker->realText($maxNbChars = 20, $indexSize = 1))
+                ->setPlaceAddress($this->faker->sentence())
+                ->setPlaceRegion($this->faker->departmentNumber())
+                ->setStatus(true);
+            $placeList[]=$place;
+            $manager->persist($place);
+
             $event = new Event();
             $event->setEventName($this->faker->realText($maxNbChars = 20, $indexSize = 1))
                 ->setEventDate($this->faker->dateTimeBetween('now', '+6 months'))
                 ->setArtist($artistList[array_rand($artistList)])
-                // ->setPlace($placeList[array_rand($placeList)])
+                ->setPlace($placeList[array_rand($placeList)])
                 ->setStatus(true);
             $manager->persist($event);
+
         }
 
         $manager->flush();

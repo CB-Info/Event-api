@@ -35,9 +35,12 @@ class ArtisteController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/artiste', name: 'artiste.getAll', methods: ['GET'])]
-    public function getAllArtiste(ArtisteRepository $repo, SerializerInterface $serializer): JsonResponse
+    public function getAllArtiste(Request $request, ArtisteRepository $repo, SerializerInterface $serializer): JsonResponse
     {
-        $artists=$repo->findAll();
+        $page = $request->get('page', 1);
+        $limit = $request->get('limit', 3);
+        $limit = $limit < 1 ? 1 : $limit; 
+        $artists = $repo->findWithPagination($page, $limit);
         $jsonArtist = $serializer->serialize($artists, 'json', ["groups" => "getAllArtiste"]);
 
         return new JsonResponse($jsonArtist, Response::HTTP_OK, [], true);
@@ -54,9 +57,14 @@ class ArtisteController extends AbstractController
     #[ParamConverter("artiste", options : ["id" => "idArtiste"])]
     public function getArtsite(Artiste $artiste, SerializerInterface $serializer): JsonResponse
     {
-        $jsonArtist = $serializer->serialize($artiste, 'json', ["groups" => "getArtiste"]);
+        if ($artiste->isStatus()){
+            $jsonArtist = $serializer->serialize($artiste, 'json', ["groups" => "getArtiste"]);
 
-        return new JsonResponse($jsonArtist, Response::HTTP_OK, ['accept'=>'json'], true);
+            return new JsonResponse($jsonArtist, Response::HTTP_OK, ['accept'=>'json'], true);
+        } else {
+            return new JsonResponse(array('EVENT NOT AVAILABLE'));
+        }   
+        
     }
 
     /**

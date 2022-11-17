@@ -12,13 +12,19 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\Serializer\SerializerInterface;
+use JMS\Serializer\SerializerInterface;
+use JMS\Serializer\Serializer;
+use JMS\Serializer\SerializationContext;
+// use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
+use Nelmio\ApiDocBundle\Annotation as Doc;
 
 class EventController extends AbstractController
 {
@@ -30,7 +36,8 @@ class EventController extends AbstractController
             'path' => 'src/Controller/EventController.php',
         ]);
     }
-
+    
+    
     /**
      * Route qui renvoie tous les events
      *
@@ -39,10 +46,21 @@ class EventController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/event', name: 'event.getAll', methods: ['GET'])]
-    public function getAllEvent(EventRepository $repo, SerializerInterface $serializer): JsonResponse
-    {
-        $events=$repo->findAll();
-        $jsonEvent = $serializer->serialize($events, 'json', ["groups" => "getAllEvent"]);
+    public function getAllEvent(Request $request, EventRepository $repo, SerializerInterface $serializer, TagAwareCacheInterface $cache): JsonResponse
+    { 
+        $page = $request->get('page', 1);
+        $limit = $request->get('limit', 5);
+        $limit = $limit < 1 ? 1 : $limit; 
+        $jsonEvent = $cache->get('getAllEvent', function (ItemInterface $item) use ($repo, $serializer, $page, $limit) {
+            $item->tag('eventCache');
+            $events = $repo->findWithPagination($page, $limit);
+            $context = SerializationContext::create()->setGroups(['getAllEvent']);
+            return $serializer->serialize($events, 'json', $context);
+        });
+        // $events = $repo->findWithPagination($page, $limit);
+        //$events = $repo->filterDate(new \DateTimeImmutable(), new \DateTimeImmutable("+ 10days"), $page, $limit);
+        //$events=$repo->findAll();
+        //$jsonEvent = $serializer->serialize($events, 'json', ["groups" => "getAllEvent"]);
 
         return new JsonResponse($jsonEvent, Response::HTTP_OK, [], true);
     }
@@ -70,9 +88,15 @@ class EventController extends AbstractController
     #[ParamConverter("event", options : ["id" => "idEvent"])]
     public function getEvent(Event $event, SerializerInterface $serializer): JsonResponse
     {
-        $jsonEvent = $serializer->serialize($event, 'json', ["groups" => "getEvent"]);
+        if ($event->isStatus()){
+            $context = SerializationContext::create()->setGroups(['getEvent']);
+            $jsonEvent = $serializer->serialize($event, 'json', $context);
 
-        return new JsonResponse($jsonEvent, Response::HTTP_OK, ['accept'=>'json'], true);
+            return new JsonResponse($jsonEvent, Response::HTTP_OK, ['accept'=>'json'], true);
+        } else {
+            return new JsonResponse(array('EVENT NOT AVAILABLE'));
+        }
+        
     }
 
     /**
@@ -83,8 +107,9 @@ class EventController extends AbstractController
      */
     #[Route('/api/event/delete/{idEvent}', name: 'event.delete', methods: ['DELETE'])]
     #[ParamConverter("event", options : ["id" => "idEvent"])]
-    public function deleteEvent(Event $event, EntityManagerInterface $entityManager): JsonResponse
+    public function deleteEvent(Event $event, EntityManagerInterface $entityManager, TagAwareCacheInterface $cache): JsonResponse
     {
+        $cache->invalidateTags(['eventCache']);
         $entityManager->remove($event);
         $entityManager->flush();
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -145,7 +170,8 @@ class EventController extends AbstractController
         $entityManager->persist($event);
         $entityManager->flush();
 
-        $jsonEvent = $serializer->serialize($event, 'json', ['groups'=>'getEvent']);
+        $context = SerializationContext::create()->setGroups(['getEvent']);
+        $jsonEvent = $serializer->serialize($event, 'json', $context);
         $location = $urlGenerator->generate('event.get', ['idEvent'=> $event->getId()], UrlGeneratorInterface::ABSOLUTE_PATH);
         return new JsonResponse($jsonEvent, Response::HTTP_CREATED, ['Location'=>$location], true);
     }    
@@ -157,6 +183,7 @@ class EventController extends AbstractController
      * @param Event $event
      * @param Request $request
      * @param ArtisteRepository $artisteRepository
+     * @param PlaceRepository $placeRepository
      * @param EntityManagerInterface $entityManager
      * @param SerializerInterface $serializer
      * @param UrlGeneratorInterface $urlGenerator
@@ -170,22 +197,31 @@ class EventController extends AbstractController
             $request->getContent(),
             Event::class,
             'json',
-            [AbstractNormalizer::OBJECT_TO_POPULATE => $event]
         );
 
-        $updateEvent->setStatus(true);
-
         $content = $request->toArray();
-        $artist = $artisteRepository->find($content['idArtist'] ?? -1);
-        $place = $placeRepository->find($content['idPlace'] ?? -1);
-        $updateEvent->setArtist($artist);
-        $updateEvent->setPlace($place);
 
-        $entityManager->persist($updateEvent);
+        $event->setEventName($updateEvent->getEventName() ?? $event->getEventName());
+        $event->setEventDate($updateEvent->getEventDate() ?? $event->getEventDate());
+        $event->setStatus(true);
+        
+        if (array_key_exists('idArtist', $content) && $content['idArtist'] && isset($content['idArtist'])){
+            $event->setArtist($artisteRepository->find($content['idArtist']));
+        }
+        if (array_key_exists('idPlace', $content) && $content['idPlace'] && isset($content['idPlace'])){
+            $event->setPlace($placeRepository->find($content['idPlace']));
+        }
+        // $artist = $artisteRepository->find($content['idArtist'] ?? -1);
+        // $place = $placeRepository->find($content['idPlace'] ?? -1);
+        // $event->setArtist($artist);
+        // $event->setPlace($place);
+
+        $entityManager->persist($event);
         $entityManager->flush();
 
-        $jsonEvent = $serializer->serialize($updateEvent, 'json', ['groups'=>'getEvent']);
-        $location = $urlGenerator->generate('event.get', ['idEvent'=> $updateEvent->getId()], UrlGeneratorInterface::ABSOLUTE_PATH);
+        $context = SerializationContext::create()->setGroups(['getEvent']);
+        $jsonEvent = $serializer->serialize($event, 'json', $context);
+        $location = $urlGenerator->generate('event.get', ['idEvent'=> $event->getId()], UrlGeneratorInterface::ABSOLUTE_PATH);
         return new JsonResponse($jsonEvent, Response::HTTP_CREATED, ['Location'=>$location], true);
     }    
 

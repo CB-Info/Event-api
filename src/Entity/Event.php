@@ -5,8 +5,28 @@ namespace App\Entity;
 use App\Repository\EventRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups;
+// use Symfony\Component\Serializer\Annotation\Groups;
+use JMS\Serializer\Annotation\Groups;
+use Hateoas\Configuration\Annotation as Hateoas;
 use Symfony\Component\Validator\Constraints as Assert;
+use OpenApi\Attributes as OA;
+/**
+ * @Hateoas\Relation(
+ *  "self",
+ *  href= @Hateoas\Route(
+ *      "event.get", 
+ *      parameters = {"idEvent" = "expr(object.getId())"}
+ * ),
+ * exclusion = @Hateoas\Exclusion(groups="getEvent")
+ * )
+ * @Hateoas\Relation(
+ *  "up",
+ *  href= @Hateoas\Route(
+ *      "event.getAll", 
+ * ),
+ * exclusion = @Hateoas\Exclusion(groups="getAllEvent")
+ * )
+ */
 
 #[ORM\Entity(repositoryClass: EventRepository::class)]
 class Event
@@ -21,6 +41,7 @@ class Event
     #[Groups(["getAllEvent", "getEvent", "getArtiste"])]
     #[Assert\NotNull(message: 'Un event doit avoir un nom')]
     #[Assert\Length(min: 5, minMessage: 'Minimum 5 caractère')]
+    #[OA\Property(type: 'string')]
     private ?string $eventName = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]

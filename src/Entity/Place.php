@@ -6,7 +6,8 @@ use Doctrine\ORM\Mapping as ORM;
 use App\Repository\PlaceRepository;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
-use Symfony\Component\Serializer\Annotation\Groups;
+// use Symfony\Component\Serializer\Annotation\Groups;
+use JMS\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PlaceRepository::class)]
 class Place
@@ -28,8 +29,9 @@ class Place
     #[ORM\Column]
     private ?bool $status = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $placeRegion = null;
+    #[ORM\Column]
+    #[Groups(["getAllEvent", "getEvent", "getPlace"])]
+    private ?int $placeRegion = null;
 
     #[ORM\OneToMany(mappedBy: 'place', targetEntity: Event::class)]
     private Collection $events;
@@ -80,12 +82,12 @@ class Place
         return $this;
     }
 
-    public function getPlaceRegion(): ?string
+    public function getPlaceRegion(): ?int
     {
         return $this->placeRegion;
     }
 
-    public function setPlaceRegion(string $placeRegion): self
+    public function setPlaceRegion(int $placeRegion): self
     {
         $this->placeRegion = $placeRegion;
 
