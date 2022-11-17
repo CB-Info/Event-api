@@ -51,16 +51,38 @@ class EventController extends AbstractController
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 5);
         $limit = $limit < 1 ? 1 : $limit; 
-        $jsonEvent = $cache->get('getAllEvent', function (ItemInterface $item) use ($repo, $serializer, $page, $limit) {
-            $item->tag('eventCache');
-            $events = $repo->findWithPagination($page, $limit);
-            $context = SerializationContext::create()->setGroups(['getAllEvent']);
-            return $serializer->serialize($events, 'json', $context);
-        });
-        // $events = $repo->findWithPagination($page, $limit);
-        //$events = $repo->filterDate(new \DateTimeImmutable(), new \DateTimeImmutable("+ 10days"), $page, $limit);
+
+        // $jsonEvent = $cache->get('getAllEvent', function (ItemInterface $item) use ($repo, $serializer, $page, $limit) {
+        //     $item->tag('eventCache');
+        //     $events = $repo->findWithPagination($page, $limit);
+        //     $context = SerializationContext::create()->setGroups(['getAllEvent']);
+        //     return $serializer->serialize($events, 'json', $context);
+        // });
+        $context = SerializationContext::create()->setGroups(['getAllEvent']);
+        $events = $repo->findWithPagination($page, $limit);
+        // $events = $repo->filterDate(new \DateTimeImmutable(), new \DateTimeImmutable("+ 10days"), $page, $limit);
         //$events=$repo->findAll();
-        //$jsonEvent = $serializer->serialize($events, 'json', ["groups" => "getAllEvent"]);
+        $jsonEvent = $serializer->serialize($events, 'json', $context);
+
+        return new JsonResponse($jsonEvent, Response::HTTP_OK, [], true);
+    }
+
+    /**
+     * Route qui filtre les events grâce au mois et à l'année
+     *
+     * @param EventRepository $repo
+     * @param SerializerInterface $serializer
+     * @return JsonResponse
+     */
+    #[Route('/api/event/filter', name: 'event.getFilter', methods: ['GET'])]
+    public function getFilterEvent(Request $request, EventRepository $repo, SerializerInterface $serializer): JsonResponse
+    { 
+        $month = $request->get('month');
+        $year = $request->get('year');
+
+        $context = SerializationContext::create()->setGroups(['getAllEvent']);
+        $events = $repo->findByMonthYear($month, $year);
+        $jsonEvent = $serializer->serialize($events, 'json', $context);
 
         return new JsonResponse($jsonEvent, Response::HTTP_OK, [], true);
     }

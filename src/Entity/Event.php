@@ -34,18 +34,18 @@ class Event
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getAllEvent", "getEvent", "getArtiste"])]
+    #[Groups(["getAllEvent", "getEvent", "getPlace"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getAllEvent", "getEvent", "getArtiste"])]
+    #[Groups(["getAllEvent", "getEvent", "getPlace"])]
     #[Assert\NotNull(message: 'Un event doit avoir un nom')]
     #[Assert\Length(min: 5, minMessage: 'Minimum 5 caractère')]
     #[OA\Property(type: 'string')]
     private ?string $eventName = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(["getAllEvent", "getEvent", "getArtiste"])]
+    #[Groups(["getAllEvent", "getEvent", "getPlace"])]
     #[Assert\NotNull(message: 'Un event doit avoir une date')]
     private ?\DateTimeInterface $eventDate = null;
 
@@ -53,7 +53,7 @@ class Event
     private ?bool $status = null;
 
     #[ORM\ManyToOne(inversedBy: 'events')]
-    #[Groups(["getAllEvent", "getEvent"])]
+    #[Groups(["getAllEvent", "getEvent", "getPlace"])]
     private ?Artiste $artist = null;
 
     #[ORM\ManyToOne(inversedBy: 'events')]
