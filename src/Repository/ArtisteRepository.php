@@ -39,6 +39,18 @@ class ArtisteRepository extends ServiceEntityRepository
         }
     }
 
+    public function findWithPagination($page, $limit): array
+    {
+        $qb = $this->createQueryBuilder('a')
+            ->setMaxResults($limit)
+            ->setFirstResult(($page - 1) * $limit);
+
+        return $qb
+        ->andWhere('a.status = true')
+        ->getQuery()
+        ->getResult();
+    }
+
 //    /**
 //     * @return Artiste[] Returns an array of Artiste objects
 //     */

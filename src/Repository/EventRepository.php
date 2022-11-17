@@ -3,8 +3,12 @@
 namespace App\Repository;
 
 use App\Entity\Event;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use DateTimeImmutable;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Query\Parameter;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
 /**
  * @extends ServiceEntityRepository<Event>
@@ -37,6 +41,62 @@ class EventRepository extends ServiceEntityRepository
         if ($flush) {
             $this->getEntityManager()->flush();
         }
+    }
+
+    public function findWithPagination($page, $limit): array
+    {
+        $qb = $this->createQueryBuilder('e')
+            ->setMaxResults($limit)
+            ->setFirstResult(($page - 1) * $limit);
+
+        //check status on
+        return $qb
+        ->andWhere('e.status = true')
+        ->getQuery()
+        ->getResult();
+    }
+
+    public function findByRegion($region): array
+    {
+        $qb = $this->createQueryBuilder('p');
+
+        return $qb
+        ->andWhere('p.placeRegion = :region')
+        ->setParameter('region', $region)
+        ->getQuery()
+        ->getResult();
+    }
+
+    public function filterDate( DateTimeImmutable $startDate)
+    {
+        $startDateTime = $startDate ? $startDate : new \DateTimeImmutable();
+        // $endDateTime = $endDate ? $endDate : new \DateTimeImmutable();
+
+        $qb = $this->createQueryBuilder('e');
+        $qb->add(
+            'where',
+            // $qb->expr()->orX(
+            //     $qb->expr()->andX(
+            //         $qb->expr()->gte('e.eventDate', ':startdate'),
+            //         $qb->expr()->lte('e.eventDate', ':enddate')
+            //     ),
+            //     $qb->expr()->andX(
+            //         $qb->expr()->gte('e.eventDateEnd', ':startdate'),
+            //         $qb->expr()->lte('e.eventDateEnd', ':enddate')
+            //     )
+            // )
+
+            $qb->expr()->gte('e.eventDate', ':startdate')
+        )
+        ->setParameters(
+            new ArrayCollection(
+                [
+                    new Parameter('startdate', $startDateTime, Types::DATETIME_IMMUTABLE),
+                    // new Parameter('enddate', $endDateTime, Types::DATETIME_IMMUTABLE)
+                ]
+                )
+                );
+            return $qb->getQuery()->getResult(); 
     }
 
 //    /**

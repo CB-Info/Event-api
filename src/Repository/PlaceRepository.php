@@ -39,6 +39,29 @@ class PlaceRepository extends ServiceEntityRepository
         }
     }
 
+    public function findWithPagination($page, $limit): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->setMaxResults($limit)
+            ->setFirstResult(($page - 1) * $limit);
+
+        return $qb
+        ->andWhere('p.status = true')
+        ->getQuery()
+        ->getResult();
+    }
+
+    public function findByRegion($region): array
+    {
+        $qb = $this->createQueryBuilder('p');
+
+        return $qb
+        ->andWhere('p.placeRegion = :region')
+        ->setParameter('region', $region)
+        ->getQuery()
+        ->getResult();
+    }
+
 //    /**
 //     * @return Place[] Returns an array of Place objects
 //     */
