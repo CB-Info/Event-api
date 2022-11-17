@@ -53,6 +53,26 @@ class PlaceController extends AbstractController
     }
 
     /**
+     * Route qui filtre les lieux selon la region
+     *
+     * @param PlaceRepository $repo
+     * @param SerializerInterface $serializer
+     * @return JsonResponse
+     */
+    #[Route('/api/place/filter', name: 'place.getFilter', methods: ['GET'])]
+    public function getFilterPlace(Request $request, PlaceRepository $repo, SerializerInterface $serializer): JsonResponse
+    {
+        $region = $request->get('region');
+        
+        $places = $repo->findByRegion($region);
+
+        $context = SerializationContext::create()->setGroups(['getAllEvent']);
+        $jsonPlace = $serializer->serialize($places, 'json', $context);
+
+        return new JsonResponse($jsonPlace, Response::HTTP_OK, [], true);
+    }
+
+    /**
      * Route qui renvoit un lieu en fonction de son ID
      * 
      * @param PlaceRepository $repo
@@ -76,7 +96,8 @@ class PlaceController extends AbstractController
     public function getPlace(Place $place, SerializerInterface $serializer): JsonResponse
     {
         if ($place->isStatus()){
-            $jsonPlace = $serializer->serialize($place, 'json');
+            $context = SerializationContext::create()->setGroups(['getPlace']);
+            $jsonPlace = $serializer->serialize($place, 'json', $context);
 
             return new JsonResponse($jsonPlace, Response::HTTP_OK, ['accept'=>'json'], true);
         } else {

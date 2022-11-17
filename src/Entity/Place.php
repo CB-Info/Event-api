@@ -34,7 +34,9 @@ class Place
     private ?int $placeRegion = null;
 
     #[ORM\OneToMany(mappedBy: 'place', targetEntity: Event::class)]
+    #[Groups(["getPlace"])]
     private Collection $events;
+
 
     public function __construct()
     {

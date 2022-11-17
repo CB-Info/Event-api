@@ -19,11 +19,11 @@ class Artiste
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getAllEvent", "getEvent", "getArtiste"])]
+    #[Groups(["getAllEvent", "getEvent", "getArtiste", "getPlace"])]
     private ?string $artistName = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getAllEvent", "getEvent", "getArtiste"])]
+    #[Groups(["getAllEvent", "getEvent", "getArtiste", "getPlace"])]
     private ?string $artistCategory = null;
 
     #[ORM\OneToMany(mappedBy: 'artist', targetEntity: Event::class)]

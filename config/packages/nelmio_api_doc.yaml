@@ -77,6 +77,41 @@ nelmio_api_doc:
             "401":
               description: An authentication exception occurred.
           security: []
+      
+      /api/event:
+        get:
+          tags:
+            - Event
+      /api/event/filter:
+        get:
+          tags:
+            - Event
+      /api/event/{idEvent}:
+        get:
+          tags:
+            - Event
+      
+      /api/place:
+        get:
+          tags:
+            - Lieux
+      /api/place/filter:
+        get:
+          tags:
+            - Lieux
+      /api/place/{idPlace}:
+        get:
+          tags:
+            - Lieux
+
+      /api/artiste:
+        get:
+          tags:
+            - Artiste
+      /api/artiste/{idArtiste}:
+        get:
+          tags:
+            - Artiste
 
   areas: # to filter documented areas
     path_patterns:

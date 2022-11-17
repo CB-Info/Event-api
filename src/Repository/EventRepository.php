@@ -58,10 +58,10 @@ class EventRepository extends ServiceEntityRepository
 
     public function findByRegion($region): array
     {
-        $qb = $this->createQueryBuilder('p');
+        $qb = $this->createQueryBuilder('e');
 
         return $qb
-        ->andWhere('p.placeRegion = :region')
+        ->andWhere('e.place', 'p.placeRegion = :region')
         ->setParameter('region', $region)
         ->getQuery()
         ->getResult();
@@ -97,6 +97,18 @@ class EventRepository extends ServiceEntityRepository
                 )
                 );
             return $qb->getQuery()->getResult(); 
+    }
+
+    public function findByMonthYear($month, $year)
+    {
+        $fromTime = new \DateTime($year . '-' . $month . '-01');
+        $toTime = new \DateTime($fromTime->format('Y-m-d') . ' first day of next month');
+        $qb = $this->createQueryBuilder('e')
+            ->where('e.eventDate >= :fromTime')
+            ->andWhere('e.eventDate < :toTime')
+            ->setParameter('fromTime', $fromTime)
+            ->setParameter('toTime', $toTime);
+        return $qb->getQuery()->getResult();
     }
 
 //    /**
